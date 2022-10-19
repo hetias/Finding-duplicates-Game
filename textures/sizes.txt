@@ -1,0 +1,13 @@
+texture total size: 800 width 600 heigth
+
+card individual size: 200 width 300 height
+
+0 green
+1 red
+2 blue
+3 purple
+
+4 green
+5 red
+6 blue
+7 purple
