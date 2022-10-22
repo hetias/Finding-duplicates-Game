@@ -22,7 +22,7 @@ CCard::CCard()
 
 CCard::~CCard()
 {
-    printf("Card  texture destroyed!\n");
+    //printf("Card  texture destroyed!\n");
     SDL_DestroyTexture(cardTexture);
     cardTexture = NULL;
 }

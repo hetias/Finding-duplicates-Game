@@ -2,16 +2,14 @@
 #include"CCard.h"
 #include"CTexture.h"
 
-
-CCard card_maze[8];
-SDL_Point card_positions[8];
-
 int first_card = -1;
 int second_card = -1;
-
 int pairs_found = 0;
 
-bool flip_pair = false;
+GAME_STATE MAIN_STATE = GAME_RUNING;
+CCard card_maze[8];
+SDL_Point card_positions[8];
+SDL_Texture* end_gametx = NULL;
 
 CGame::CGame()
 {
@@ -20,6 +18,9 @@ CGame::CGame()
 	gameRenderer = NULL;
 	//gameSurface = NULL;
 	gameWindow = NULL;
+
+	//just to work with random number :)
+	srand(time(NULL));
 }
 
 //Game destructor
@@ -67,11 +68,21 @@ bool CGame::Initialize(const char* title, int width, int height)
 //Game File Management
 void CGame::Manage()
 {
+	//Load images - I may change this later, so all height cards use the same pointer.
 	for(int i = 0; i < 8; i++)
 	{
 		card_maze[i].LoadTexture(gameRenderer, "textures/cards_spritesheet.png");
 	}
 
+	//load end game texture
+	end_gametx = CTexture::LoadTexture(gameRenderer, SDL_FALSE, "textures/end_gametx.png");
+
+	if (end_gametx == NULL)
+	{
+		printf("no cargó wey\n");
+	}
+
+	//Defines all possible positions for cards
 	card_positions[0] = { 0,0 };
 	card_positions[1] = { 200,0 };
 	card_positions[2] = { 400,0 };
@@ -81,12 +92,9 @@ void CGame::Manage()
 	card_positions[6] = { 400,300 };
 	card_positions[7] = { 600,300 };
 
-	//define cards positions
-	for (int i = 0; i < 8; i++)
-	{
-		card_maze[i].SetPosition(card_positions[i]);
-	}
-	
+	//gives heach card a random positions from the array
+	define_cards_pos();
+
 	//define ids
 	for (int i = 0; i < 8; i++)
 	{
@@ -102,8 +110,9 @@ void CGame::Loop()
 	{
 		Logic();
 		Render();
-		//CleanUp();
+		
 	}
+	CleanUp();
 }
 
 //Game logic handler
@@ -145,19 +154,40 @@ void CGame::Logic()
 			}
 
 		}
-		
-		if (flip_pair && gameEvent.type == SDL_MOUSEBUTTONDOWN)
+
+		if (gameEvent.type == SDL_MOUSEBUTTONDOWN)
 		{
-			SDL_Delay(150);
+			switch (MAIN_STATE)
+			{
+			case RESET_CARDS:
+				card_maze[first_card].ResetCard();
+				card_maze[second_card].ResetCard();
 
-			card_maze[first_card].ResetCard();
-			card_maze[second_card].ResetCard();
+				first_card = -1;
+				second_card = -1;
 
-			first_card = -1;
-			second_card = -1;
+				MAIN_STATE = GAME_RUNING;
+				break;
+			case GAME_END:
+				//reset cards
+				first_card = -1;
+				second_card = -1;
 
-			flip_pair = false;
+				//change cards positions
+				for (int i = 0; i < 8; i++)
+				{
+					card_maze[i].ResetCard();
+				}
+
+				define_cards_pos();
+
+				MAIN_STATE = GAME_RUNING;
+				break;
+			default:
+				break;
+			}
 		}
+		
 	}
 
 	//POST WHILE
@@ -169,7 +199,7 @@ void CGame::Logic()
 	{
 		if (first_card == 0 && second_card == 4 || first_card == 4 && second_card == 0)
 		{
-			printf("pair!\n");
+			//printf("pair!\n");
 			pairs_found++;
 
 			first_card = -1;
@@ -177,7 +207,7 @@ void CGame::Logic()
 		}
 		else if (first_card == 1 && second_card == 5 || first_card == 5 && second_card == 1)
 		{
-			printf("pair!\n");
+			//printf("pair!\n");
 			pairs_found++;
 
 			first_card = -1;
@@ -185,7 +215,7 @@ void CGame::Logic()
 		}
 		else if(first_card == 2 && second_card == 6 || first_card == 6 && second_card == 2)
 		{
-			printf("pair!\n");
+			//printf("pair!\n");
 			pairs_found++;
 
 			first_card = -1;
@@ -193,7 +223,7 @@ void CGame::Logic()
 		}
 		else if (first_card == 3 && second_card == 7 || first_card == 7 && second_card == 3)
 		{
-			printf("pair!\n");
+			//printf("pair!\n");
 			pairs_found++;
 
 			first_card = -1;
@@ -201,24 +231,18 @@ void CGame::Logic()
 		}
 		else
 		{
-			printf("no pair!\n");
-			flip_pair = true;
+			//printf("no pair!\n");
+			MAIN_STATE = RESET_CARDS;
 		}
 	}
 
+	//if all pairs where found
 	if (pairs_found >= 4)
 	{
-		printf("All pairs found!\n");
-		SDL_Delay(150);
-
-		for (int i = 0; i < 8; i++)
-		{
-			card_maze[i].ResetCard();
-			first_card = -1;
-			second_card = -1;
-		}
+		//printf("All pairs found!\n");
 
 		pairs_found = 0;
+		MAIN_STATE = GAME_END;
 	}
 
 }
@@ -235,6 +259,13 @@ void CGame::Render()
 		card_maze[i].RenderCard(gameRenderer);
 	}
 
+	if (MAIN_STATE == GAME_END)
+	{
+		SDL_Rect quad = {0,275,800,50}; //SCREEN_HEIGHT - (end_gametx.h / 2) = 275
+		CTexture::RenderTexture(gameRenderer, end_gametx, NULL, &quad);
+		//printf("All pairs found\n");
+	}
+
 	//Updates Renderer
 	SDL_RenderPresent(gameRenderer);
 }
@@ -242,7 +273,8 @@ void CGame::Render()
 //File clean up
 void CGame::CleanUp()
 {
-	
+	SDL_DestroyTexture(end_gametx);
+	end_gametx = NULL;
 }
 
 //Game close
@@ -257,4 +289,49 @@ void CGame::Close()
 	//Close SDL and subsystems
 	SDL_Quit();
 	IMG_Quit();
+}
+
+void define_cards_pos()
+{
+	int min = 0;
+	int max = 7;
+
+	//array to verify already taked positions 
+	int taked_positions[8] = { -1,-1,-1,-1,-1,-1,-1,-1 };
+
+	//flag
+	bool taked = false;
+
+	int i = 0;
+
+	//define cards positions
+	while (i < 8)
+	{
+		//generate random number between 0 and 7
+		//its gonna choose a positions from the array
+		int rnd = min + (rand() % (max - min + 1));
+
+		//verify its not taken already
+		for (int j = 0; j < 8; j++)
+		{
+			if (taked_positions[j] == rnd)
+			{
+				taked = true;
+			}
+		}
+
+		//if rnd != taked_positions[any]
+		if (!taked)
+		{
+			//defines positions for the card
+			card_maze[i].SetPosition(card_positions[rnd]);
+			//saves the taked position, so it doesnt repeat yk
+			taked_positions[i] = rnd;
+			//i++
+			i++;
+		}
+
+		taked = false;
+	}
+
 }

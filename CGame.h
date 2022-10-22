@@ -2,8 +2,18 @@
 	#define CGAME_H
 
 #include<stdio.h>
+#include<stdlib.h>
+#include<time.h>
 #include<SDL.h>
 #include<SDL_image.h>
+
+void define_cards_pos();
+
+enum GAME_STATE {
+	GAME_RUNING,
+	RESET_CARDS,
+	GAME_END
+};
 
 class CGame
 {

@@ -24,7 +24,7 @@ SDL_Texture* CTexture::LoadTexture(SDL_Renderer* renderer, SDL_bool hasTranspare
 
 	SDL_FreeSurface(texSurf);
 
-	printf(".::TEXTURE::SUCCESSFULLY::LOADED::FROM::%s::.\n", file);
+	//printf(".::TEXTURE::SUCCESSFULLY::LOADED::FROM::%s::.\n", file);
 
 	return finalTex;
 }
